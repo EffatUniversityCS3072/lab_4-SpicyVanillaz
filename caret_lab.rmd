@@ -1,6 +1,9 @@
 ---
 title: "CARET_Lab"
-output: html_document
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
 date: "`r Sys.Date()`"
 ---
 
@@ -11,6 +14,9 @@ knitr::opts_chunk$set(echo = TRUE)
 Package loading
 ```{r}
 library(caret)
+library(skimr)
+library(ggplot2)
+library(lattice)
 ```
 
 Load Data
@@ -25,18 +31,28 @@ Task1: Create a Validation/Training Dataset
 You need to split the loaded dataset into two, 80% of which we will use to train our models and 20% that we will hold back as a validation dataset.
 Hint: use createDataPartition function
 ```{r}
+set.seed(123)
+inTraining <- createDataPartition(dataset$Species, p = 0.8, list = FALSE)
+training <- dataset[inTraining, ]
+validation <- dataset[-inTraining, ]
 
 ```
 
 Task2: Summarize Dataset
 Use skimr library to summarize the dataset
 ```{r}
+library(skimr)
+skim(training)
 
 ```
 
 Task3: split input and output
- It is the time to seperate the input attributes and  the output attributes. call the inputs attributes x and the output attribute (or class) y.
+ It is the time to separate the input attributes and  the output attributes. call the inputs attributes x and the output attribute (or class) y.
 ```{r}
+x_train <- training[, 1:4]
+y_train <- training$Species
+x_validation <- validation[, 1:4]
+y_validation <- validation$Species
 
 ```
 
@@ -59,6 +75,25 @@ Train 5 different algorithms using 'train' function:
 - Random Forest (RF)
 
 ```{r}
+# Train LDA model
+set.seed(123)
+model_lda <- train(x_train, y_train, method="lda", trControl=control, metric=metric)
+
+# Train CART model
+set.seed(123)
+model_cart <- train(x_train, y_train, method="rpart", trControl=control, metric=metric)
+
+# Train kNN model
+set.seed(123)
+model_knn <- train(x_train, y_train, method="knn", trControl=control, metric=metric)
+
+# Train SVM model
+set.seed(123)
+model_svm <- train(x_train, y_train, method="svmLinear", trControl=control, metric=metric)
+
+# Train RF model
+set.seed(123)
+model_rf <- train(x_train, y_train, method="rf", trControl=control, metric=metric)
 
 
 ```
@@ -68,6 +103,8 @@ We now have 5 models and accuracy estimations for each. We need to compare the m
 Use resamples function to complete this task
 
 ```{r}
+models <- list(lda = model_lda, cart = model_cart, knn = model_knn, svm = model_svm, rf = model_rf)
+resamples(models)
 
 
 ```
@@ -79,6 +116,11 @@ Now we want to get an idea of the accuracy of the best model on our validation s
 
 ```{r}
 
+# Predict using the RF model
+predictions <- predict(model_rf, newdata = x_validation)
+
+# Confusion Matrix
+confusionMatrix(predictions, y_validation)
 
 ```
 
